@@ -10,7 +10,7 @@ border-width: 0.5px;
  */
 
 body {
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Jost', sans-serif !important;
   background-color: #fff;
   color: #000;
 }
@@ -78,21 +78,28 @@ body {
   display: block;
 }
 .title {
-  font-size: 52px;
-  font-weight: 700;
+  font-size: 70px;
+  font-weight: 500;
   margin-bottom: 20px;
+  line-height: 100%;
+  letter-spacing: 0px;
+  vertical-align: middle;
+  font-style: medium;
 }
 .subtitle {
-  font-size: 18px;
+  font-size: 20px;
   color: #333;
   margin-bottom: 32px;
-  line-height: 1.7;
+  line-height: 140%;
+  font-weight: 500;
+  letter-spacing: 0px;
+  vertical-align: middle;
+  font-style: normal;
 }
 
 /* Common Button Styles */
 .shop-now-btn,
 .choose-gift-btn {
-  font-family: 'Jost', sans-serif;
   font-weight: 400;
   font-style: normal;
   font-size: 16px;
@@ -103,12 +110,21 @@ body {
   text-transform: uppercase;
   cursor: pointer;
   transition: color 300ms ease-out;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   position: relative;
   overflow: hidden; /* Required for animation */
   border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.shop-now-btn .arrow-icon,
+.choose-gift-btn .arrow-icon{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 
 /* SHOP NOW Button */
@@ -129,6 +145,11 @@ body {
   color: #333;
 }
 
+.shop-now-btn:hover svg line,
+.shop-now-btn:hover svg path{
+  stroke: #333;
+}
+
 /* CHOOSE GIFT Button */
 .choose-gift-btn {
   background: linear-gradient(to right, #ffed5a 0%, #ffed5a 50%, #000 50%, #000 100%);
@@ -144,6 +165,11 @@ body {
 .choose-gift-btn:hover {
   background-position: -100% 0; /* Moves gradient left → right */
   color: #fff;
+}
+
+.choose-gift-btn:hover svg line,
+.choose-gift-btn:hover svg path {
+  stroke: #fff; /* Arrow becomes white on hover */
 }
 
 /* Tablet Responsiveness */
