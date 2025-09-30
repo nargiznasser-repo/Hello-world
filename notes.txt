@@ -1,0 +1,342 @@
+import { Directive, ElementRef, HostListener, Input, OnInit } from '@angular/core';
+import { environment } from 'src/environments/environment';
+import { CrsCrmSharedServiceService } from '../services/data/crs-crm-shared-service.service';
+
+@Directive({
+  selector: '[appNumberFormatter]'
+})
+export class NumberFormatterDirective implements OnInit{
+  @Input() language: string ='en-us'
+  numberFormat=environment.numberFormat
+
+  private originalFormattedValue: string | null = null;
+  previousLanguage: string = 'en-us'
+
+  constructor(private el: ElementRef, private sharedService: CrsCrmSharedServiceService) { }
+  ngOnInit(): void {
+    this.applyFormatting('manual')
+    this.sharedService.language$.subscribe((lang)=>{
+      this.previousLanguage=this.language
+      this.language=lang
+      this.applyFormatting()
+    })
+  }
+  // Parse number format (minInt-minFrac.maxFrac)
+  private parseNumberFormat(format: string): { minInt: number; minFrac: number; maxFrac: number } {
+    const [minInt, fraction] = format.split('-');
+    const [minFrac, maxFrac] = fraction.split('.').map((part) => parseInt(part, 10));
+
+    return {
+      minInt: parseInt(minInt, 10),
+      minFrac: minFrac,
+      maxFrac: maxFrac
+    };
+  }
+private applyFormatting(from ? :any){
+  const input = this.el.nativeElement as HTMLInputElement;
+  const rawValue = this.removeFormatting(input.value,from);
+  const parsedValue = parseFloat(rawValue);
+
+  // Format the number immediately when the directive is applied
+  if (!isNaN(parsedValue)) {
+    input.value = this.formatNumber(parsedValue);
+    this.originalFormattedValue = input.value;
+  }
+}
+  // Format the number based on the locale and format input
+  private formatNumber(value: number): string {
+    const { minInt, minFrac, maxFrac } = this.parseNumberFormat(this.numberFormat);
+    return new Intl.NumberFormat(this.language, {
+      minimumIntegerDigits: minInt,
+      minimumFractionDigits: minFrac,
+      maximumFractionDigits: maxFrac
+    }).format(value);
+  }
+
+  // Remove formatting and return the raw number as a string
+  private removeFormatting(value: string,event?:any): string {
+    const originalValue=value
+    if(event==='manual'){
+      var groupSeparator = new Intl.NumberFormat(this.language)
+      .format(1111)
+      .replace(/1/g, '');
+    var decimalSeparator = new Intl.NumberFormat(this.language)
+      .format(1.1)
+      .replace(/1/g, '');
+    }else{
+      var groupSeparator = new Intl.NumberFormat(this.previousLanguage)
+      .format(1111)
+      .replace(/1/g, '');
+    var decimalSeparator = new Intl.NumberFormat(this.previousLanguage)
+      .format(1.1)
+      .replace(/1/g, '');
+    }
+
+
+    value = value.replace(new RegExp(`\\${groupSeparator}`, 'g'), '');
+    value = value.replace(new RegExp(`\\${decimalSeparator}`), '.');
+    if(Number(originalValue)<0){
+      return '-'+value.replace(/[^0-9.]/g, ''); 
+    }else{
+      return value.replace(/[^0-9.]/g, ''); 
+    }
+   
+  }
+
+  // Handle focus event
+  @HostListener('focus')
+  onFocus(): void {
+    const input = this.el.nativeElement as HTMLInputElement;
+    if (this.originalFormattedValue !== null) {
+      input.value = this.originalFormattedValue;
+    }
+  }
+
+  // Handle blur event
+  @HostListener('blur')
+  onBlur(): void {
+    const input = this.el.nativeElement as HTMLInputElement;
+    const rawValue = this.removeFormatting(input.value,'manual');
+    const parsedValue = parseFloat(rawValue);
+    if (!isNaN(parsedValue)) {
+      this.originalFormattedValue = this.formatNumber(parsedValue);
+      input.value = this.originalFormattedValue;
+    } else {
+      input.value = ''; 
+    }
+  }
+
+  // Handle input event (typing in the input field)
+  @HostListener('input', ['$event'])
+  onInput(event: Event): void {
+    const input = this.el.nativeElement as HTMLInputElement;
+    const rawValue = this.removeFormatting(input.value,'manual');
+    if (rawValue && !isNaN(parseFloat(rawValue))) {
+      this.originalFormattedValue = this.formatNumber(parseFloat(rawValue));
+    } else {
+      this.originalFormattedValue = ''; 
+    }
+  }
+
+
+}
+
+application :
+<div class="d-flex gap-2 align-items-center">
+                <input type="text" formControlName="itcPrice" maxlength="9" appNumberFormatter
+                  (focus)="onFocus('itcPrice',itcPrice.value)" #itcPrice (blur)="onBlur('itcPrice',$event)"
+                  [language]="selectedLanguage" [readonly]="readonlyFlag" class="k-textbox"
+                  [placeholder]="'875244'|translateLabel">
+                <span>{{crsSharedModel.currecyCode}}</span>
+              </div>
+
+
+gql :
+import { Apollo, gql } from 'apollo-angular';
+  getFolioDetail(id: number, FetchPolicy: 'cache-first' | 'network-only' | 'cache-only' | 'no-cache' | 'standby' = "network-only") {
+    return this.apollo.query({
+      query: gql`query FolioDetails {
+      folioDetails(folioId: ${id}) {
+          folUId
+          folCmpCompanyId
+          folAdrAddressId
+          folAdrContactId
+          folFogGroupId
+          folTypNationalityId
+          folTypLanguageId
+          folTypAgeGroupId
+          folTypAreaId
+          folTypEnquiryId
+          folTypFirstEnquiryId
+          folTypPrevEnquiryId
+          folTypFlagId
+          folTypRepeaterId
+          folFolAdvisorId
+          folCmmAdvisorTeamId
+          folFolHouseholdId
+          folFolReferrerId
+          folTypMaritalStatusId
+          folTypCurrencyId
+          folTypAccessGroupId
+          folSurName
+          folForeName
+          folMidName
+          folType
+          folOnboardType
+          folLogin
+          folPhone1
+          folEmail1
+          folRepeaterNo
+          folRepeaterBalance
+          folAgentBenefitBegDate
+          folAgentBenefitEndDate
+          folFolioBenefitBegDate
+          folFolioBenefitEndDate
+          folFlagComments
+          folImportCode
+          folDaysCount
+          folTripsCount
+          folBookingsCount
+          folCanMerge
+          folAdvisorType
+          folCreatedDate
+          folEnabled
+          folComments
+          folModifyDate
+          fogFolLeaderId
+          fogTypGroupId
+          folReferrerSurName
+          folReferrerForeName
+          adrFolioUId
+          adrFolioAlias
+          adrFolioPrevSurName
+          adrFolioTitle
+          adrFolioMailingName
+          adrFolioEnvelopeName
+          adrFolioBillingName
+          adrFolioBirthDate
+          adrFolioBirthPlace
+          adrFolioTypBirthCountryId
+          adrFolioGender
+          adrFolioRelation
+          adrFolioPosition
+          adrFolioPhone1
+          adrFolioPhone2
+          adrFolioPhone3
+          adrFolioPhone4
+          adrFolioFax1
+          adrFolioEMail1
+          adrFolioEMail2
+          adrFolioEMail3
+          adrFolioEMail4
+          adrFolioWebPage1
+          adrFolioCompany
+          adrFolioCompany2
+          adrFolioStreet1
+          adrFolioCity
+          adrFolioTypProvinceId
+          adrFolioPostalCode
+          adrFolioTypCountryId
+          adrFolioFlex01
+          adrFolioFlex02
+          adrFolioFlex03
+          adrFolioFlex04
+          adrFolioFlex05
+          adrFolioFlex06
+          adrFolioFlex07
+          adrFolioFlex08
+          adrFolioAge
+          adrFolioAllowWebNameChange
+          adrFolioPrivacyFlex01
+          adrFolioPrivacyFlex02
+          adrFolioPrivacyFlex03
+          adrFolioPrivacyFlex04
+          adrFolioPrivacyFlex05
+          adrFolioPrivacyFlex06
+          adrFolioPrivacyFlex07
+          adrFolioPrivacyFlex08
+          adrFolioImageModifyDate
+          adrContUId
+          adrContSurName
+          adrContForeName
+          adrContMidName
+          adrContAlias
+          adrContPrevSurName
+          adrContTypSalutationId
+          adrContTitle
+          adrContMailingName
+          adrContEnvelopeName
+          adrContBirthDate
+          adrContBirthPlace
+          adrContTypBirthCountryId
+          adrContGender
+          adrContRelation
+          adrContPosition
+          adrContPhone1
+          adrContPhone2
+          adrContPhone3
+          adrContPhone4
+          adrContFax1
+          adrContEMail1
+          adrContEMail2
+          adrContEMail3
+          adrContEMail4
+          adrContWebPage1
+          adrContStreet1
+          adrContCity
+          adrContTypProvinceId
+          adrContPostalCode
+          adrContTypCountryId
+          adrContComments
+          typAgeGroupId
+          typProvinceId
+          typProvinceString1
+          typCountryId
+          typCountryString1
+          typRepeaterLevelUId
+          typRepeaterLevelString1
+          typBenefitLevelId
+          typBenefitLevelUId
+          typBenefitLevelString1
+          typSalutationUId
+          typSalutationString1
+          typNationalityId
+          typMartialSatusId
+          typLanguageId
+          typFlagId
+          typFlagColorValue1
+          typFlagCommentString1
+          typEnquiryId
+          typEnquiryString1
+          typEnquiryEnabled
+          typAreaId
+          typAreaString1
+          cmmCode
+          cmmName
+          folCreatedByForeName
+          folCreatedBySurName
+          usrCreatedByLogin
+          folModifiedByForeName
+          folModifiedBySurName
+          usrModifiedByLogin
+          travelerBenefitBalance
+          travelerBenefitProgramStatus
+      }
+    }
+    `,
+      fetchPolicy: FetchPolicy
+    });
+  }
+
+
+interceptors: eg jwt
+import { Injectable } from '@angular/core';
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptor
+} from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { APP_SECURITY } from '../app-constants/app-constants';
+import { JWTInterceptorModel } from '../general-model/jwt.token.mode';
+
+@Injectable()
+export class JwtInterceptor implements HttpInterceptor {
+
+  constructor() { }
+
+  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    const currentUser: JWTInterceptorModel = JSON.parse(localStorage.getItem(APP_SECURITY.authToken));
+    if(currentUser!=null ){
+      request = request.clone({
+        setHeaders: {
+            Authorization: `Bearer ${currentUser.data.replace(/['"]+/g, '')}`,
+            showTaskIds:'true',
+        }
+    });
+    }
+    return next.handle(request);
+  }
+}
+
